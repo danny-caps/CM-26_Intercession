@@ -184,11 +184,55 @@ async function safeDbQuery(queryText: string, params: any[] = []): Promise<any[]
   }
 }
 
+// Global SSE clients for instantaneous multi-user updates
+const sseClients = new Set<express.Response>();
+
+function broadcastEvent(type: string, payload: any) {
+  const message = `data: ${JSON.stringify({ type, payload, timestamp: Date.now() })}\n\n`;
+  for (const client of Array.from(sseClients)) {
+    try {
+      client.write(message);
+    } catch {
+      sseClients.delete(client);
+    }
+  }
+}
+
+// Keep-alive heartbeat for SSE connections
+setInterval(() => {
+  for (const client of Array.from(sseClients)) {
+    try {
+      client.write(': ping\n\n');
+    } catch {
+      sseClients.delete(client);
+    }
+  }
+}, 20000);
+
+// API Real-time SSE Stream
+app.get('/api/events', (req, res) => {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache, no-transform');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no');
+  res.flushHeaders?.();
+
+  sseClients.add(res);
+
+  // Send initial connection confirmation
+  res.write(`data: ${JSON.stringify({ type: 'connected', timestamp: Date.now() })}\n\n`);
+
+  req.on('close', () => {
+    sseClients.delete(res);
+  });
+});
+
 // API Health Check
 app.get('/api/health', async (req, res) => {
   res.json({
     status: 'ok',
     database: isDbConnected ? 'connected' : 'sync_active',
+    active_listeners: sseClients.size,
     timestamp: new Date().toISOString()
   });
 });
@@ -198,7 +242,7 @@ app.get('/api/prayer-types', (req, res) => {
   res.json({ data: PRAYER_TYPES });
 });
 
-// API Get Submissions
+// API Get Submissions (Full real-time shared canonical list)
 app.get('/api/submissions', async (req, res) => {
   const rows = await safeDbQuery(`
     SELECT 
@@ -216,17 +260,21 @@ app.get('/api/submissions', async (req, res) => {
     FROM prayer_submissions 
     WHERE status = 'approved'
     ORDER BY submitted_at DESC 
-    LIMIT 100
+    LIMIT 200
   `);
 
-  if (rows && rows.length > 0) {
+  if (rows !== null) {
+    // Keep in-memory cache synchronized with DB
+    if (rows.length > 0) {
+      inMemorySubmissions = rows;
+    }
     res.json({ data: rows });
   } else {
     res.json({ data: inMemorySubmissions });
   }
 });
 
-// API Submit Prayer Offering
+// API Submit Prayer Offering (Persists and instantly broadcasts to all users)
 app.post('/api/submissions', async (req, res) => {
   try {
     const { prayer_type_id, quantity } = req.body;
@@ -237,7 +285,7 @@ app.post('/api/submissions', async (req, res) => {
     const prayerType = PRAYER_TYPES.find(p => p.id === prayer_type_id);
     const now = new Date();
     const today = now.toISOString().split('T')[0];
-    const newId = `sub-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+    const newId = `sub-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
 
     const newRow = {
       id: newId,
@@ -255,19 +303,19 @@ app.post('/api/submissions', async (req, res) => {
       prayer_type_icon: prayerType?.icon || 'Flame',
     };
 
-    // Store in memory
+    // Store in memory immediately
     inMemorySubmissions.unshift(newRow);
-    if (inMemorySubmissions.length > 200) {
-      inMemorySubmissions = inMemorySubmissions.slice(0, 200);
+    if (inMemorySubmissions.length > 300) {
+      inMemorySubmissions = inMemorySubmissions.slice(0, 300);
     }
 
-    // Persist to Supabase in background
+    // Persist to Supabase asynchronously
     if (pool) {
       pool.query(
         `INSERT INTO prayer_submissions (
           id, prayer_type_id, quantity, prayer_date, submitted_at, timezone, is_anonymous, status, created_at, updated_at, prayer_type_name, prayer_type_slug, prayer_type_icon
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-        ON CONFLICT (id) DO NOTHING`,
+        ON CONFLICT (id) DO UPDATE SET quantity = EXCLUDED.quantity`,
         [
           newRow.id,
           newRow.prayer_type_id,
@@ -285,6 +333,9 @@ app.post('/api/submissions', async (req, res) => {
         ]
       ).catch(() => {});
     }
+
+    // Instantly broadcast the new offering to ALL active users
+    broadcastEvent('new_submission', newRow);
 
     res.json({ data: newRow });
   } catch (err: any) {

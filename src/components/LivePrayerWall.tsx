@@ -98,8 +98,8 @@ export const LivePrayerWall: React.FC<LivePrayerWallProps> = ({ onQuickOffer }) 
                   className="mt-5 w-full py-3 rounded-2xl bg-[#FAF7F2] hover:bg-[#9A3412] text-[#9A3412] hover:text-white border border-[#9A3412]/20 hover:border-transparent text-xs font-black uppercase tracking-wider shadow-2xs hover:shadow-md transition-all flex items-center justify-center gap-2 group-hover:bg-[#9A3412] group-hover:text-white"
                 >
                   <img
-                    src="/Prayer_Logo.png"
-                    alt="Prayer"
+                    src="/Offer_Prayer_Logo.png"
+                    alt="Offer Prayer"
                     className="w-4 h-4 object-contain select-none"
                     referrerPolicy="no-referrer"
                   />

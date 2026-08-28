@@ -52,7 +52,67 @@ function notifyListeners() {
   });
 }
 
-// Initialize seed data & sync with Supabase backend
+// Initialize seed data & setup real-time multi-user sync
+export async function syncSubmissionsFromServer() {
+  try {
+    const response = await fetch('/api/submissions');
+    if (response.ok) {
+      const { data } = await response.json();
+      if (Array.isArray(data)) {
+        setStored(STORAGE_KEYS.SUBMISSIONS, data);
+        notifyListeners();
+      }
+    }
+  } catch {
+    // Graceful fallback to local cached submissions if offline
+  }
+}
+
+let eventSource: EventSource | null = null;
+
+function setupRealtimeConnection() {
+  if (typeof window === 'undefined' || !window.EventSource) return;
+
+  if (eventSource) {
+    try {
+      eventSource.close();
+    } catch {}
+  }
+
+  try {
+    eventSource = new EventSource('/api/events');
+
+    eventSource.onmessage = (event) => {
+      try {
+        const payload = JSON.parse(event.data);
+        if (payload.type === 'new_submission' && payload.payload) {
+          const newSub: PrayerSubmission = payload.payload;
+          const current = getStored<PrayerSubmission[]>(STORAGE_KEYS.SUBMISSIONS, []);
+          
+          // Avoid duplicate entries
+          const existingIdx = current.findIndex(s => s.id === newSub.id);
+          if (existingIdx !== -1) {
+            current[existingIdx] = newSub;
+          } else {
+            current.unshift(newSub);
+          }
+
+          setStored(STORAGE_KEYS.SUBMISSIONS, current);
+          notifyListeners();
+        }
+      } catch (e) {
+        console.error('Error handling live sync event', e);
+      }
+    };
+
+    eventSource.onerror = () => {
+      // Auto reconnect handled by EventSource or fallback to periodic sync
+    };
+  } catch (err) {
+    console.warn('Real-time SSE not available, falling back to fast polling', err);
+  }
+}
+
 export async function initStore() {
   const storedTypes = getStored<PrayerType[]>(STORAGE_KEYS.PRAYER_TYPES, []);
   const validSlugs = new Set(['holy-mass', 'eucharistic-visits', 'fastings', 'way-of-cross', 'our-father', 'decades']);
@@ -67,21 +127,27 @@ export async function initStore() {
     setStored(STORAGE_KEYS.SUBMISSIONS, INITIAL_SUBMISSIONS);
   }
 
-  // Asynchronously fetch latest submissions from Supabase API
-  try {
-    const response = await fetch('/api/submissions');
-    if (response.ok) {
-      const { data } = await response.json();
-      if (Array.isArray(data) && data.length > 0) {
-        const local = getStored<PrayerSubmission[]>(STORAGE_KEYS.SUBMISSIONS, []);
-        const idSet = new Set(data.map((d: any) => d.id));
-        const merged = [...data, ...local.filter(l => !idSet.has(l.id))];
-        setStored(STORAGE_KEYS.SUBMISSIONS, merged);
-        notifyListeners();
+  // 1. Immediate sync from server
+  await syncSubmissionsFromServer();
+
+  // 2. Connect to real-time broadcast stream for multi-user instant updates
+  setupRealtimeConnection();
+
+  // 3. Periodic fast polling heartbeat every 3.5 seconds
+  setInterval(() => {
+    syncSubmissionsFromServer();
+  }, 3500);
+
+  // 4. Instant sync on tab focus or visibility change
+  if (typeof window !== 'undefined') {
+    window.addEventListener('focus', () => {
+      syncSubmissionsFromServer();
+    });
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        syncSubmissionsFromServer();
       }
-    }
-  } catch {
-    // Graceful offline fallback to local cached submissions
+    });
   }
 }
 
