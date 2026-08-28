@@ -7,7 +7,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
 app.use(express.json());
 
@@ -61,7 +61,7 @@ const PRAYER_TYPES = [
     name: 'Our Father',
     slug: 'our-father',
     icon: 'HeartHandshake',
-    description: 'The Lord's prayer uniting hearts in filial trust in God the Father.',
+    description: 'The Lord\'s prayer uniting hearts in filial trust in God the Father.',
     unit_name: 'Prayers',
     quick_presets: [5, 10, 25, 50],
     is_active: true,
@@ -71,7 +71,7 @@ const PRAYER_TYPES = [
     name: 'Decades (Rosary)',
     slug: 'decades',
     icon: 'Sparkles',
-    description: 'Decades of the Holy Rosary consecrated under Mother Mary's maternal protection.',
+    description: 'Decades of the Holy Rosary consecrated under Mother Mary\'s maternal protection.',
     unit_name: 'Decades',
     quick_presets: [5, 10, 20, 50],
     is_active: true,
@@ -103,28 +103,27 @@ let pool: pg.Pool | null = null;
 let isDbConnected = false;
 
 try {
-  let rawDbUrl = process.env.DATABASE_URL || 'postgresql://postgres:Daniyal%408490@db.vsavnfhgtgdpqmvnlqbx.supabase.co:5432/postgres';
+  const rawDbUrl = process.env.DATABASE_URL;
   
-  if (rawDbUrl.includes(':[Daniyal@8490]@')) {
-    rawDbUrl = rawDbUrl.replace(':[Daniyal@8490]@', ':Daniyal%408490@');
-  } else if (rawDbUrl.includes(':Daniyal@8490@')) {
-    rawDbUrl = rawDbUrl.replace(':Daniyal@8490@', ':Daniyal%408490@');
+  if (!rawDbUrl) {
+    console.warn("DATABASE_URL not configured. Database features will be unavailable.");
+    pool = null;
+  } else {
+    pool = new Pool({
+      connectionString: rawDbUrl,
+      ssl: {
+        rejectUnauthorized: false
+      },
+      max: 5,
+      idleTimeoutMillis: 10000,
+      connectionTimeoutMillis: 4000,
+    });
+
+    // Handle background pool errors cleanly without crashing
+    pool.on("error", (err) => {
+      isDbConnected = false;
+    });
   }
-
-  pool = new Pool({
-    connectionString: rawDbUrl,
-    ssl: {
-      rejectUnauthorized: false
-    },
-    max: 5,
-    idleTimeoutMillis: 10000,
-    connectionTimeoutMillis: 4000,
-  });
-
-  // Handle background pool errors cleanly without crashing
-  pool.on('error', (err) => {
-    isDbConnected = false;
-  });
 } catch (e) {
   pool = null;
 }
@@ -446,4 +445,6 @@ async function startServer() {
 }
 
 startServer();
+
+
 
