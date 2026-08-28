@@ -2,5 +2,7 @@
   "name": "Campus Meet '26 Intercession",
   "description": "Jesus Youth Irinjalakuda Campus Ministry Intercession Platform for Campus Meet '26 held on Sept 18–21, 2026 at Christ College of Engineering.",
   "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }
