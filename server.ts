@@ -1,14 +1,10 @@
 import express from 'express';
 import path from 'path';
-import { fileURLToPath } from 'url';
 import { createServer as createViteServer } from 'vite';
 import pg from 'pg';
 import dotenv from 'dotenv';
 
 dotenv.config();
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = 3000;
@@ -65,7 +61,7 @@ const PRAYER_TYPES = [
     name: 'Our Father',
     slug: 'our-father',
     icon: 'HeartHandshake',
-    description: 'The Lord’s prayer uniting hearts in filial trust in God the Father.',
+    description: 'The Lord's prayer uniting hearts in filial trust in God the Father.',
     unit_name: 'Prayers',
     quick_presets: [5, 10, 25, 50],
     is_active: true,
@@ -75,7 +71,7 @@ const PRAYER_TYPES = [
     name: 'Decades (Rosary)',
     slug: 'decades',
     icon: 'Sparkles',
-    description: 'Decades of the Holy Rosary consecrated under Mother Mary’s maternal protection.',
+    description: 'Decades of the Holy Rosary consecrated under Mother Mary's maternal protection.',
     unit_name: 'Decades',
     quick_presets: [5, 10, 20, 50],
     is_active: true,
@@ -188,7 +184,7 @@ async function safeDbQuery(queryText: string, params: any[] = []): Promise<any[]
 const sseClients = new Set<express.Response>();
 
 function broadcastEvent(type: string, payload: any) {
-  const message = `data: ${JSON.stringify({ type, payload, timestamp: Date.now() })}\n\n`;
+  const message = `data: ${JSON.stringify({ type, payload, timestamp: Date.now() })}\\n\\n`;
   for (const client of Array.from(sseClients)) {
     try {
       client.write(message);
@@ -202,7 +198,7 @@ function broadcastEvent(type: string, payload: any) {
 setInterval(() => {
   for (const client of Array.from(sseClients)) {
     try {
-      client.write(': ping\n\n');
+      client.write(': ping\\n\\n');
     } catch {
       sseClients.delete(client);
     }
@@ -220,7 +216,7 @@ app.get('/api/events', (req, res) => {
   sseClients.add(res);
 
   // Send initial connection confirmation
-  res.write(`data: ${JSON.stringify({ type: 'connected', timestamp: Date.now() })}\n\n`);
+  res.write(`data: ${JSON.stringify({ type: 'connected', timestamp: Date.now() })}\\n\\n`);
 
   req.on('close', () => {
     sseClients.delete(res);
@@ -450,3 +446,4 @@ async function startServer() {
 }
 
 startServer();
+
