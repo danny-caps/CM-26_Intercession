@@ -1,0 +1,60 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background-color: #FAF7F2;
+    color: #2A160E;
+  }
+
+  h1, h2, h3, .font-heading {
+    font-family: 'Cinzel', serif;
+  }
+
+  .font-prayer {
+    font-family: 'Playfair Display', Georgia, serif;
+  }
+}
+
+@keyframes candleFlicker {
+  0%, 100% {
+    opacity: 0.95;
+    transform: scale(1) translateY(0);
+    filter: drop-shadow(0 0 8px rgba(251, 226, 136, 0.7));
+  }
+  25% {
+    opacity: 0.85;
+    transform: scale(0.98) translateY(1px);
+    filter: drop-shadow(0 0 5px rgba(234, 122, 30, 0.5));
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.04) translateY(-1px);
+    filter: drop-shadow(0 0 12px rgba(251, 226, 136, 0.9));
+  }
+  75% {
+    opacity: 0.9;
+    transform: scale(0.99) translateY(0);
+    filter: drop-shadow(0 0 7px rgba(234, 122, 30, 0.6));
+  }
+}
+
+.animate-candle {
+  animation: candleFlicker 3s infinite ease-in-out;
+}
+
+/* Custom Scrollbar for Liturgical Feel */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #FAF7F2;
+}
+::-webkit-scrollbar-thumb {
+  background: #EA7A1E;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #9A3412;
+}
