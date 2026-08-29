@@ -8,7 +8,7 @@ import {
 import { INITIAL_PRAYER_TYPES, INITIAL_SUBMISSIONS } from './initialData';
 
 const STORAGE_KEYS = {
-  PRAYER_TYPES: 'jy_prayer_types_v3',
+  PRAYER_TYPES: 'jy_prayer_types_v5',
   SUBMISSIONS: 'jy_submissions_v4',
 };
 
@@ -115,7 +115,7 @@ function setupRealtimeConnection() {
 
 export async function initStore() {
   const storedTypes = getStored<PrayerType[]>(STORAGE_KEYS.PRAYER_TYPES, []);
-  const validSlugs = new Set(['holy-mass', 'eucharistic-visits', 'fastings', 'way-of-cross', 'our-father', 'decades']);
+  const validSlugs = new Set(['holy-mass', 'eucharistic-visits', 'creed', 'memorare', 'our-father', 'decades']);
   const hasInvalidTypes = storedTypes.length !== 6 || storedTypes.some(t => !validSlugs.has(t.slug));
 
   if (hasInvalidTypes) {
@@ -233,6 +233,8 @@ export const prayerStore = {
             setStored(STORAGE_KEYS.SUBMISSIONS, current);
           }
         }
+        // Trigger immediate background sync
+        syncSubmissionsFromServer();
       }
     } catch (err) {
       console.warn('Syncing prayer to Supabase backend in background:', err);
@@ -270,8 +272,8 @@ export const prayerStore = {
     const TARGET_GOALS: Record<string, number> = {
       'holy-mass': 1000,
       'eucharistic-visits': 5000,
-      'fastings': 2000,
-      'way-of-cross': 1500,
+      'creed': 2000,
+      'memorare': 1500,
       'our-father': 50000,
       'decades': 30000,
     };

@@ -23,7 +23,7 @@ export const SubmitPrayerModal: React.FC<SubmitPrayerModalProps> = ({
   onSuccess,
 }) => {
   // Allowed 6 prayer types strictly as requested
-  const allowedPrayerSlugs = new Set(['holy-mass', 'eucharistic-visits', 'fastings', 'way-of-cross', 'our-father', 'decades']);
+  const allowedPrayerSlugs = new Set(['holy-mass', 'eucharistic-visits', 'creed', 'memorare', 'our-father', 'decades']);
   const prayerTypes = prayerStore
     .getPrayerTypes()
     .filter(t => t.is_active && allowedPrayerSlugs.has(t.slug));

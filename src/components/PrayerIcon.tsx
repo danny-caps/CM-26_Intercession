@@ -24,6 +24,8 @@ interface PrayerIconProps {
 const ICON_MAP: Record<string, LucideIcon> = {
   'holy-mass': Flame,
   'eucharistic-visits': Church,
+  'creed': BookOpen,
+  'memorare': HeartHandshake,
   'fastings': Coffee,
   'way-of-cross': Compass,
   'our-father': Cross,
@@ -46,6 +48,9 @@ const PRAYER_IMAGE_MAP: Record<string, { src: string; alt: string }> = {
   'holy-mass': { src: '/Holy_Mass_logo.png', alt: 'Holy Mass' },
   'eucharistic-visits': { src: '/Chapel_Logo.png', alt: 'Eucharistic Visits' },
   'chapel': { src: '/Chapel_Logo.png', alt: 'Chapel' },
+  'creed': { src: '/Faith_logo.png', alt: 'Creed' },
+  'faith': { src: '/Faith_logo.png', alt: 'Creed' },
+  'memorare': { src: '/Memorare_logo.png', alt: 'Memorare' },
   'fastings': { src: '/Fasting_Logo.png', alt: 'Fastings' },
   'fasting': { src: '/Fasting_Logo.png', alt: 'Fasting' },
   'way-of-cross': { src: '/Way_of_Cross_Logo.png', alt: 'Way of Cross' },
