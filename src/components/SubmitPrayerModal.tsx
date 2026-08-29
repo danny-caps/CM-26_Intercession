@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Flame, 
   X, 
@@ -23,38 +23,66 @@ export const SubmitPrayerModal: React.FC<SubmitPrayerModalProps> = ({
   onSuccess,
 }) => {
   // Allowed 6 prayer types strictly as requested
-  const allowedPrayerSlugs = new Set(['holy-mass', 'eucharistic-visits', 'creed', 'memorare', 'our-father', 'decades']);
-  const prayerTypes = prayerStore
-    .getPrayerTypes()
-    .filter(t => t.is_active && allowedPrayerSlugs.has(t.slug));
+  const allowedPrayerSlugs = useMemo(() => new Set(['holy-mass', 'eucharistic-visits', 'creed', 'memorare', 'our-father', 'decades']), []);
+  
+  const prayerTypes = useMemo(() => {
+    return prayerStore
+      .getPrayerTypes()
+      .filter(t => t.is_active && allowedPrayerSlugs.has(t.slug));
+  }, [allowedPrayerSlugs]);
 
-  const [prayerTypeId, setPrayerTypeId] = useState<string>(preselectedPrayerTypeId || prayerTypes[0]?.id || '');
-  const [quantity, setQuantity] = useState<number>(5);
+  const [prayerTypeId, setPrayerTypeId] = useState<string>('');
+  const [quantity, setQuantity] = useState<number | string>(5);
 
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [isSuccess, setIsSuccess] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>('');
 
-  // Update selected prayer type if preselected changes
+  // Initialize selected prayer type and quantity only when modal opens or preselection changes
   useEffect(() => {
-    if (preselectedPrayerTypeId) {
-      const valid = prayerTypes.find(p => p.id === preselectedPrayerTypeId);
-      if (valid) {
-        setPrayerTypeId(valid.id);
-        setQuantity(valid.default_step || 5);
+    if (isOpen) {
+      if (preselectedPrayerTypeId) {
+        const valid = prayerTypes.find(p => p.id === preselectedPrayerTypeId);
+        if (valid) {
+          setPrayerTypeId(valid.id);
+          setQuantity(valid.default_step || 5);
+          return;
+        }
       }
-    } else if (!prayerTypeId && prayerTypes.length > 0) {
-      setPrayerTypeId(prayerTypes[0].id);
-      setQuantity(prayerTypes[0].default_step || 5);
+      
+      if (prayerTypes.length > 0) {
+        setPrayerTypeId(prayerTypes[0].id);
+        setQuantity(prayerTypes[0].default_step || 5);
+      }
     }
-  }, [preselectedPrayerTypeId, prayerTypes]);
+  }, [isOpen, preselectedPrayerTypeId, prayerTypes]);
 
   if (!isOpen) return null;
 
   const currentPrayer = prayerTypes.find(p => p.id === prayerTypeId) || prayerTypes[0];
 
   const handleStepChange = (amount: number) => {
-    setQuantity(prev => Math.max(1, Math.min(10000, prev + amount)));
+    const currentVal = typeof quantity === 'number' ? quantity : (parseInt(quantity, 10) || 1);
+    const nextVal = Math.max(1, Math.min(100000, currentVal + amount));
+    setQuantity(nextVal);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    if (val === '') {
+      setQuantity('');
+      return;
+    }
+    const num = parseInt(val, 10);
+    if (!isNaN(num)) {
+      setQuantity(Math.max(1, Math.min(100000, num)));
+    }
+  };
+
+  const handleInputBlur = () => {
+    if (quantity === '' || typeof quantity === 'string' && isNaN(parseInt(quantity, 10))) {
+      setQuantity(1);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -66,7 +94,9 @@ export const SubmitPrayerModal: React.FC<SubmitPrayerModalProps> = ({
       return;
     }
 
-    if (quantity < 1 || isNaN(quantity)) {
+    const numericQty = typeof quantity === 'number' ? quantity : parseInt(quantity, 10);
+
+    if (isNaN(numericQty) || numericQty < 1) {
       setErrorMessage('Please enter a valid quantity of at least 1.');
       return;
     }
@@ -77,7 +107,7 @@ export const SubmitPrayerModal: React.FC<SubmitPrayerModalProps> = ({
       // Date is automatically recorded and no user info is collected
       await prayerStore.submitPrayer({
         prayer_type_id: prayerTypeId,
-        quantity: Number(quantity),
+        quantity: numericQty,
       });
 
       setIsSubmitting(false);
@@ -225,7 +255,8 @@ export const SubmitPrayerModal: React.FC<SubmitPrayerModalProps> = ({
                     min="1"
                     max="100000"
                     value={quantity}
-                    onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                    onChange={handleInputChange}
+                    onBlur={handleInputBlur}
                     className="w-full h-12 text-center text-xl font-black text-[#9A3412] bg-white border-2 border-[#9A3412]/30 rounded-2xl focus:border-[#EA7A1E] focus:ring-2 focus:ring-[#EA7A1E]/20 outline-none"
                   />
                 </div>

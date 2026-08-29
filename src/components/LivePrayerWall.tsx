@@ -25,13 +25,16 @@ export const LivePrayerWall: React.FC<LivePrayerWallProps> = ({ onQuickOffer }) 
             <h2 className="text-left text-3xl sm:text-4xl md:text-[43px] font-extrabold text-[#2A160E] font-heading tracking-tight leading-tight">
               Prayer Offerings
             </h2>
+            <p className="text-sm text-[#6B4E41] mt-1">
+              Tap any prayer card to offer prayers and update the community count.
+            </p>
           </div>
 
           {/* Quick Filter Buttons */}
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 max-w-full">
             <button
               onClick={() => setSelectedFilter('all')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
                 selectedFilter === 'all'
                   ? 'bg-[#9A3412] text-white shadow-xs'
                   : 'bg-white text-[#44261B] hover:bg-[#FAF7F2] border border-gray-200'
@@ -43,7 +46,7 @@ export const LivePrayerWall: React.FC<LivePrayerWallProps> = ({ onQuickOffer }) 
               <button
                 key={stat.slug}
                 onClick={() => setSelectedFilter(stat.slug)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
                   selectedFilter === stat.slug
                     ? 'bg-[#9A3412] text-white shadow-xs'
                     : 'bg-white text-[#44261B] hover:bg-[#FAF7F2] border border-gray-200'
@@ -61,7 +64,8 @@ export const LivePrayerWall: React.FC<LivePrayerWallProps> = ({ onQuickOffer }) 
             return (
               <div
                 key={item.prayer_type_id}
-                className="bg-white rounded-3xl p-6 border border-[#9A3412]/15 hover:border-[#9A3412]/40 shadow-xs hover:shadow-md transition-all flex flex-col justify-between group"
+                onClick={() => onQuickOffer(item.prayer_type_id)}
+                className="bg-white rounded-3xl p-6 border border-[#9A3412]/15 hover:border-[#9A3412]/40 shadow-xs hover:shadow-md transition-all flex flex-col justify-between group cursor-pointer relative overflow-hidden"
               >
                 <div>
                   {/* Card Header with Icon */}
@@ -82,7 +86,7 @@ export const LivePrayerWall: React.FC<LivePrayerWallProps> = ({ onQuickOffer }) 
                   {/* Big Number Offered */}
                   <div className="my-4 pt-3 border-t border-gray-100 flex items-baseline justify-center">
                     <div>
-                      <span className="text-2xl sm:text-3xl font-black text-[#9A3412] font-heading">
+                      <span className="text-2xl sm:text-3xl font-black text-[#9A3412] font-heading transition-all duration-300">
                         {item.total_quantity.toLocaleString()}
                       </span>
                       <span className="text-xs text-[#6B4E41] font-semibold ml-2">offered</span>
@@ -93,9 +97,12 @@ export const LivePrayerWall: React.FC<LivePrayerWallProps> = ({ onQuickOffer }) 
                 {/* Offer Button */}
                 <button
                   type="button"
-                  onClick={() => onQuickOffer(item.prayer_type_id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onQuickOffer(item.prayer_type_id);
+                  }}
                   id={`quick-offer-btn-${item.slug}`}
-                  className="mt-5 w-full py-3 rounded-2xl bg-[#FAF7F2] hover:bg-[#9A3412] text-[#9A3412] hover:text-white border border-[#9A3412]/20 hover:border-transparent text-xs font-black uppercase tracking-wider shadow-2xs hover:shadow-md transition-all flex items-center justify-center gap-2 group-hover:bg-[#9A3412] group-hover:text-white"
+                  className="mt-3 w-full py-3 rounded-2xl bg-[#FAF7F2] hover:bg-[#9A3412] text-[#9A3412] hover:text-white border border-[#9A3412]/20 hover:border-transparent text-xs font-black uppercase tracking-wider shadow-2xs hover:shadow-md transition-all flex items-center justify-center gap-2 group-hover:bg-[#9A3412] group-hover:text-white cursor-pointer"
                 >
                   <img
                     src="/Offer_Prayer_Logo.png"
@@ -114,3 +121,4 @@ export const LivePrayerWall: React.FC<LivePrayerWallProps> = ({ onQuickOffer }) 
     </section>
   );
 };
+
