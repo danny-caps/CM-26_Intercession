@@ -31,10 +31,12 @@ export const PosterEmblem: React.FC<PosterEmblemProps> = ({ showRegistrationCTA 
                 target="_blank"
                 rel="noopener noreferrer"
                 id="register-now-cta-btn"
-                className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-[#EA7A1E] to-[#9A3412] hover:from-[#F29543] hover:to-[#B8431B] text-white text-xs sm:text-sm font-black uppercase tracking-wider shadow-md hover:shadow-xl hover:scale-102 active:scale-98 transition-all border border-white/20 cursor-pointer"
+                className="bc-cta"
               >
-                <span>Register Now</span>
-                <ArrowRight className="w-4 h-4 text-[#FBE288]" />
+                <span className="bc-cta__label">Register Now</span>
+                <span className="bc-cta__arrow">
+                  <ArrowRight />
+                </span>
               </a>
             </div>
           )}

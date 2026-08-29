@@ -58,3 +58,4 @@ export const AboutIntercession: React.FC = () => {
     </section>
   );
 };
+
